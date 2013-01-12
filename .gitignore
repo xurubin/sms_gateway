@@ -2,3 +2,5 @@
 *.pot
 *.pyc
 local_settings.py
+
+sms_gateway/mysql_account.py
