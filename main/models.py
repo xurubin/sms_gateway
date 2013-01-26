@@ -20,7 +20,8 @@ class Processor(models.Model):
     endpoint = models.TextField()
 
 class Task(models.Model):
-    message  = models.ForeignField(SMS)
-    processor = models.ForeignField(Processor)
-    create_date = models.DateTimeField(auto_add_now=True)
-    Processed = models.BooleanField()
+    message  = models.ForeignKey(SMS)
+    processor = models.ForeignKey(Processor)
+    create_date = models.DateTimeField(auto_now_add=True)
+    processed = models.BooleanField()
+    result = models.TextField()
