@@ -46,7 +46,7 @@ def recv_sms():
             sms.save()
             add_processor_jobs(sms)
             new = True
-        #message.delete()
+            message.delete()
     return new
 
 class Receive_Thread(LogExceptionThread):

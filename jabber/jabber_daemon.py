@@ -1,12 +1,19 @@
 #!/usr/bin/python
-
+### BEGIN INIT INFO
+# Provides:          sms_xmpp
+# Required-Start:    $mysql $ejabberd
+# Required-Stop:     $mysql $ejabberd
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: SMS XMPP Gateway
+### END INIT INFO
 import sys, time
 from daemon import Daemon
  
 import os 
 import sys 
 import logging
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir)) 
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)) 
 
 from sms_gateway import settings 
 from django.core.management import setup_environ 

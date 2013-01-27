@@ -12,7 +12,8 @@ class AutoRegisterClientXMPP(sleekxmpp.ClientXMPP):
     def __init__(self, jid, password):
         super(AutoRegisterClientXMPP, self).__init__(jid, password)
         self.add_event_handler("register", self.register)
-        
+        self.add_event_handler("ssl_invalid_cert", self.ssl_invalid_cert)
+
         #self.register_plugin('xep_0030') # Service Discovery
         #self.register_plugin('xep_0004') # Data forms
         #self.register_plugin('xep_0066') # Out-of-band Data
@@ -51,3 +52,5 @@ class AutoRegisterClientXMPP(sleekxmpp.ClientXMPP):
             print "No response from server."
             self.disconnect()
             
+    def ssl_invalid_cert(self, raw_cert):
+        pass # Ignore SSL certificate error.

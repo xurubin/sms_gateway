@@ -5,8 +5,13 @@ Created on 20 Jan 2013
 '''
 from sms import Modem, ModemError, encoding
 from threading import Lock
+import logging
 
 device = Modem("/dev/ttyAMA0", 115200)
+'''
+at+csmp=17,167,0,0
+at+csca="+447404000111"
+'''
 dlock = Lock()
 
 def get_message_list():
@@ -35,6 +40,7 @@ def send_message(number, text):
         dlock.acquire()
         device.send(number, text)
     finally:
+        logging.info("Did you forget to set AT+CSCA?")
         dlock.release()
 
 def del_message(msg):
