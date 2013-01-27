@@ -4,15 +4,20 @@ Created on 20 Jan 2013
 @author: Rubin
 '''
 from sms import Modem, ModemError, encoding
+from threading import Lock
 
 device = Modem("/dev/ttyAMA0", 115200)
+dlock = Lock()
 
 def get_message_list():
     try:
+        dlock.acquire()
         msgs = device.messages()
     except ModemError:
         msgs = device.messages()
-        
+    finally:
+        dlock.release()
+    
     for message in msgs:
         assert message.date
         if not message.number:
@@ -26,7 +31,15 @@ def get_message_list():
     return msgs
 
 def send_message(number, text):
-    device.send(number, text)
+    try:
+        dlock.acquire()
+        device.send(number, text)
+    finally:
+        dlock.release()
 
 def del_message(msg):
-    msg.delete()
+    try:
+        dlock.acquire()
+        msg.delete()
+    finally:
+        dlock.release()

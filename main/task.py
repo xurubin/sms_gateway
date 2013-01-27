@@ -9,6 +9,8 @@ from processor import SMSProcessor
 from threading import Thread
 import device
 import time
+from mythread import LogExceptionThread
+import logging
 
 def add_processor_jobs(sms):
     for processor in Processor.objects.all():
@@ -44,16 +46,17 @@ def recv_sms():
             sms.save()
             add_processor_jobs(sms)
             new = True
+        #message.delete()
     return new
 
-class Receive_Thread(Thread):
+class Receive_Thread(LogExceptionThread):
     def __init__(self):
         super(Receive_Thread, self).__init__()
         self.daemon = True
     def run(self):
         while True:
             if recv_sms():
-                print "New SMS received."
+                logging.info("New SMS received.")
             time.sleep(15)
             
 def start_recv_loop():

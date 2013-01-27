@@ -1,6 +1,7 @@
 import sleekxmpp
 from clientxmpp import AutoRegisterClientXMPP
 from peer import SMSBotManager
+import logging
 
 class ControllerBot(AutoRegisterClientXMPP):
 
@@ -13,7 +14,7 @@ class ControllerBot(AutoRegisterClientXMPP):
     def start(self, event):
         self.send_presence()
         self.get_roster()
-        print "Dispatcher goes online"
+        logging.info("Dispatcher goes online")
         
     def message(self, msg):
         if msg['type'] in ('normal', 'chat'):
@@ -38,4 +39,4 @@ def run(server):
     if controller.connect(server):
         controller.process(block=True)
     else:
-        print "controller bot connection failed."
+        logging.error("controller bot connection failed.")

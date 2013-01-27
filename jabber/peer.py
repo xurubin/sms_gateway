@@ -5,6 +5,8 @@ import time
 import sleekxmpp
 from sleekxmpp.exceptions import IqError, IqTimeout
 from clientxmpp import AutoRegisterClientXMPP
+from main.mythread import LogExceptionThread
+import logging
 
 class SMSEndPointBot(AutoRegisterClientXMPP):
 
@@ -24,22 +26,28 @@ class SMSEndPointBot(AutoRegisterClientXMPP):
         self.send_presence_subscription(pto=self.peer, pnick = self.telnum, ptype='subscribe')
         
         self.is_connected = True
-        print "Bot: %s for %s goes online." % (self.telnum, self.peer)
+        logging.info("Bot: %s for %s goes online." % (self.telnum, self.peer))
 
     def end(self, event):
         self.is_connected = False
         
     def message(self, msg):
         if msg['type'] in ('normal', 'chat'):
-            ## Pass on the received message as SMS
-            send_message(self.telnum, msg['body'])
+            logging.debug("Sending SMS: %s %s" % (self.telnum, msg['body']))
+            try:
+                ## Pass on the received message as SMS
+                send_message(self.telnum, msg['body'])
+            except Exception, e:
+                logging.exception(e)
+                msg.reply("Failed to send text.").send()
             
     def send_msg(self, msg):
+        logging.debug("Transmitting incoming SMS to %s: " % self.peer + msg)
         self.send_message(mto=self.peer, mbody=msg)
         return True
         
       
-class SMSEndPointThread(Thread):
+class SMSEndPointThread(LogExceptionThread):
     def __init__(self, jid, password, telnum, peer, server):
         super(SMSEndPointThread, self).__init__()
         self.daemon = True
@@ -50,7 +58,7 @@ class SMSEndPointThread(Thread):
         if self.bot.connect(self.server):
             self.bot.process(block=True)
         else:
-            print "SMS bot connection failed."
+            logging.error("SMS bot %s connection failed." % self.bot.telnum)
 
 class SMSBotManager(Thread):
     instance = None
@@ -83,6 +91,7 @@ class SMSBotManager(Thread):
         """
             Create a new bot thread, adding it to the bots session list.
         """
+        logging.debug("Starting bot %s" % jid)
         assert not jid in self.bots
         t = SMSEndPointThread(jid, password, telnum, peer, self.server)
         self.bots[jid] = t.bot
@@ -93,6 +102,7 @@ class SMSBotManager(Thread):
         """
             Register a new bot and start it.
         """
+        logging.info("Creating bot %s" % jid)
         bot_record = SMSBot()
         bot_record.jid = jid
         bot_record.password = password
@@ -111,7 +121,7 @@ class SMSBotManager(Thread):
             create a new bot if it does not exists yet.
         """
         if not PeerACL.AllowPeer(telnum, peer):
-            print "Access denied for %s to %s" % (peer, telnum)
+            logging.info("Access denied for %s to %s" % (peer, telnum))
             return False
         bots = SMSBot.objects.filter(number=telnum)
         jid = None
@@ -126,7 +136,7 @@ class SMSBotManager(Thread):
                 return False
             jid = bots[0].jid
         else:
-            print "More than one bot is handling %s, something has gone wrong." % telnum
+            logging.error("More than one bot is handling number %s, something has gone wrong." % telnum)
             return False
         
         return self.send_msg(jid, greeting_msg)
@@ -148,14 +158,17 @@ class SMSBotManager(Thread):
             peer = PeerACL.defaultSink()
         else:
             peer = bots[0].peer
+        logging.debug("Dispatch incoming text %s to bot %s" % (telnum, peer))
         if not self.activate_bot(telnum, peer, text):
-            print "Cannot dispatch message from %s to %s: " % (telnum, peer)
+            logging.error("Cannot dispatch message from %s to %s: " % (telnum, peer))
             return False
         return True
     
     def run(self):
         while True:
             qs = Task.objects.filter(processor_id = self.processor.id, processed = False)
+            if qs:
+                logging.debug("New task detected.")
             for task in qs:
                 if self.dispatch_sms(task.message.number, task.message.text):
                     task.processed = True
