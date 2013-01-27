@@ -25,3 +25,9 @@ class Task(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     processed = models.BooleanField()
     result = models.TextField()
+
+class SMSBot(models.Model):
+    jid = models.CharField(max_length=64)
+    password = models.CharField(max_length=16)
+    peer = models.CharField(max_length=64)
+    number = models.CharField(max_length=32)

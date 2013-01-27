@@ -15,12 +15,14 @@ def get_message_list():
         
     for message in msgs:
         assert message.date
-        text = message.text
-        try:
-            text = encoding.decode_unicode(text)
-        except ValueError:
-            text = encoding.decode_accents(text)
-        message = text.encode('utf-8')
+        if not message.number:
+            message.number = "Blocked"
+        #text = message.text
+        #try:
+        #    text = encoding.decode_unicode(text)
+        #except ValueError:
+        #    text = encoding.decode_accents(text)
+        #message.text = text.encode('utf-8')
     return msgs
 
 def send_message(number, text):

@@ -6,12 +6,14 @@ Created on 13 Jan 2013
 
 from models import Processor, SMS, Task
 from processor import SMSProcessor
+from threading import Thread
 import device
+import time
 
 def add_processor_jobs(sms):
     for processor in Processor.objects.all():
         if processor.receiver == sms.received:
-            task = Task
+            task = Task()
             task.message = sms
             task.processor = processor
             task.processed = False
@@ -27,6 +29,7 @@ def send_sms(number, text):
     add_processor_jobs(sms)
     
 def recv_sms():
+    new = False
     for message in device.get_message_list():
         number = message.number
         date = message.date
@@ -35,11 +38,28 @@ def recv_sms():
             sms = SMS()
             sms.number = number
             sms.text = text
+            sms.date = date
             sms.state = SMS.STATE_NEW
             sms.received = False
             sms.save()
             add_processor_jobs(sms)
+            new = True
+    return new
+
+class Receive_Thread(Thread):
+    def __init__(self):
+        super(Receive_Thread, self).__init__()
+        self.daemon = True
+    def run(self):
+        while True:
+            if recv_sms():
+                print "New SMS received."
+            time.sleep(15)
             
+def start_recv_loop():
+    recv_thread = Receive_Thread()
+    recv_thread.start()
+    
 def process_pending():
     for sms in SMS.objects.filter(state = SMS.STATE_NEW):
         process_failed = False

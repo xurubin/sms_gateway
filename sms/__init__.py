@@ -16,7 +16,26 @@ logger = logging.getLogger('sms.modem')
 class ModemError(RuntimeError):
     pass
 
+class FixedOffset(datetime.tzinfo):
+    """Fixed offset in minutes east from UTC."""
+    ZERO = datetime.timedelta(0)
+    def __init__(self):
+        self.__offset = FixedOffset.ZERO
+        self.__name = "FixedOffset"
+    
+    def setOffset(self, offset):
+        self.__offset = datetime.timedelta(minutes = offset)
+        return self
+    
+    def utcoffset(self, dt):
+        return self.__offset
 
+    def tzname(self, dt):
+        return self.__name
+
+    def dst(self, dt):
+        return FixedOffset.ZERO
+    
 class Message(object):
     """A received SMS message"""
 
@@ -29,8 +48,8 @@ class Message(object):
         if date is not None:
             # modem incorrectly reports UTC time rather than local
             # time so ignore time zone info
-            date = date[:-3]
-            self.date = datetime.datetime.strptime(date, self.format)
+            ndate = datetime.datetime.strptime(date[:-3], self.format)
+            self.date = datetime.datetime(ndate.year, ndate.month, ndate.day, ndate.hour, ndate.minute, ndate.second, ndate.microsecond, FixedOffset().setOffset(60 * int(date[-3:])))
         self.text = text
 
     def delete(self):
