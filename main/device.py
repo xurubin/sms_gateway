@@ -39,8 +39,9 @@ def send_message(number, text):
     try:
         dlock.acquire()
         device.send(number, text)
-    finally:
+    except:
         logging.info("Did you forget to set AT+CSCA?")
+    finally:
         dlock.release()
 
 def del_message(msg):
